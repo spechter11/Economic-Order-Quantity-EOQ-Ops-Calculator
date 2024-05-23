@@ -1,4 +1,4 @@
-from pandas import DataFrame
+import pandas as pd
 
 class ForecastErrorCalculator:
     def __init__(self, data):

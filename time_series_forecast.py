@@ -1,5 +1,5 @@
-from pandas import Series
-from numpy import dot
+import pandas as pd
+import numpy as np
 
 class TimeSeriesForecast:
     def __init__(self, data):

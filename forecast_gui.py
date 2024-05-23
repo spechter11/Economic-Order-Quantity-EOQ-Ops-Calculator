@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from pandas import DataFrame, ExcelWriter
-from numpy import array
+import numpy as np
 import os
 from time_series_forecast import TimeSeriesForecast
 
@@ -13,48 +13,80 @@ class ForecastApp:
         self.wma_result_value = None
         self.es_result_value = None
         self.create_forecast_widgets(parent)
+        self.configure_grid_weights(parent)
 
     def create_forecast_widgets(self, parent):
+        # Adding a title
+        title_label = ttk.Label(parent, text="Time Series Forecasting", font=("Helvetica", 16, "bold"))
+        title_label.grid(row=0, column=0, columnspan=5, pady=10)
+
+        # Instructions
+        instructions = (
+            "Enter time series data as space-separated values, one per line, e.g.:"
+            "\nDate1 Value1"
+            "\nDate2 Value2"
+            "\n...\n\n"
+            "Enter weights for WMA in the format 'w0 value0', 'w1 value1', ... , one per line, e.g.:"
+            "\nw0 0.3"
+            "\nw1 0.25"
+            "\nw2 0.1"
+            "\nw3 0.1"
+            "\nw4 0.08"
+            "\nw5 0.07"
+            "\nw6 0.05"
+            "\nw7 0.05"
+        )
+        instructions_label = ttk.Label(parent, text=instructions, justify=tk.LEFT)
+        instructions_label.grid(row=1, column=0, columnspan=5, pady=5, sticky=tk.W, padx=10)
+
         # Input fields for data
-        ttk.Label(parent, text="Enter time series data (space separated rows):").grid(column=0, row=0, sticky=tk.W, padx=10, pady=5)
+        ttk.Label(parent, text="Enter time series data:").grid(column=0, row=2, sticky=tk.W, padx=10, pady=5)
         self.data_entry = tk.Text(parent, height=10, width=50)
-        self.data_entry.grid(column=1, row=0, padx=10, pady=5)
+        self.data_entry.grid(column=1, row=2, columnspan=4, padx=10, pady=5)
+        self.data_entry.insert(tk.END, "Date1 10\nDate2 15\nDate3 20\nDate4 25\nDate5 30\nDate6 35\nDate7 40\nDate8 45")  # Sample data
 
         # Simple Moving Average
-        ttk.Label(parent, text="Simple Moving Average: Enter the window size (number of periods):").grid(column=0, row=1, sticky=tk.W, padx=10, pady=5)
+        ttk.Label(parent, text="Simple Moving Average: Enter window size:").grid(column=0, row=3, sticky=tk.W, padx=10, pady=5)
         self.sma_window_entry = tk.Entry(parent, width=10)
-        self.sma_window_entry.grid(column=1, row=1, padx=10, pady=5)
+        self.sma_window_entry.grid(column=1, row=3, padx=10, pady=5)
         self.sma_result = ttk.Label(parent, text="Result will appear here")
-        self.sma_result.grid(column=2, row=1, padx=10, pady=5)
-        ttk.Button(parent, text="Calculate Simple Moving Average", command=self.calculate_sma).grid(column=3, row=1, padx=10, pady=5)
-        ttk.Button(parent, text="Export SMA to Excel", command=self.export_sma_to_excel).grid(column=4, row=1, padx=10, pady=5)
+        self.sma_result.grid(column=2, row=3, padx=10, pady=5)
+        ttk.Button(parent, text="Calculate SMA", command=self.calculate_sma).grid(column=3, row=3, padx=10, pady=5)
+        ttk.Button(parent, text="Export SMA to Excel", command=self.export_sma_to_excel).grid(column=4, row=3, padx=10, pady=5)
 
         # Weighted Moving Average
-        ttk.Label(parent, text="Weighted Moving Average: Enter weights (space separated, sum should be 1):").grid(column=0, row=2, sticky=tk.W, padx=10, pady=5)
+        ttk.Label(parent, text="Weighted Moving Average: Enter weights:").grid(column=0, row=4, sticky=tk.W, padx=10, pady=5)
         self.wma_weights_entry = tk.Text(parent, height=10, width=50)
-        self.wma_weights_entry.grid(column=1, row=2, padx=10, pady=5)
+        self.wma_weights_entry.grid(column=1, row=4, columnspan=4, padx=10, pady=5)
+        self.wma_weights_entry.insert(tk.END, "w0 0.3\nw1 0.25\nw2 0.1\nw3 0.1\nw4 0.08\nw5 0.07\nw6 0.05\nw7 0.05")  # Sample weights
         self.wma_result = ttk.Label(parent, text="Result will appear here")
-        self.wma_result.grid(column=2, row=2, padx=10, pady=5)
-        ttk.Button(parent, text="Calculate Weighted Moving Average", command=self.calculate_wma).grid(column=3, row=2, padx=10, pady=5)
-        ttk.Button(parent, text="Export WMA to Excel", command=self.export_wma_to_excel).grid(column=4, row=2, padx=10, pady=5)
+        self.wma_result.grid(column=2, row=5, padx=10, pady=5)
+        ttk.Button(parent, text="Calculate WMA", command=self.calculate_wma).grid(column=3, row=5, padx=10, pady=5)
+        ttk.Button(parent, text="Export WMA to Excel", command=self.export_wma_to_excel).grid(column=4, row=5, padx=10, pady=5)
 
         # Exponential Smoothing
-        ttk.Label(parent, text="Exponential Smoothing: Enter the smoothing factor (alpha):").grid(column=0, row=3, sticky=tk.W, padx=10, pady=5)
+        ttk.Label(parent, text="Exponential Smoothing: Enter smoothing factor (alpha):").grid(column=0, row=6, sticky=tk.W, padx=10, pady=5)
         self.es_alpha_entry = tk.Entry(parent, width=10)
-        self.es_alpha_entry.grid(column=1, row=3, padx=10, pady=5)
-        ttk.Label(parent, text="Enter the prior forecast value:").grid(column=0, row=4, sticky=tk.W, padx=10, pady=5)
+        self.es_alpha_entry.grid(column=1, row=6, padx=10, pady=5)
+        ttk.Label(parent, text="Enter prior forecast value:").grid(column=0, row=7, sticky=tk.W, padx=10, pady=5)
         self.es_prior_entry = tk.Entry(parent, width=10)
-        self.es_prior_entry.grid(column=1, row=4, padx=10, pady=5)
-        ttk.Label(parent, text="Enter the observed demand for the last period:").grid(column=0, row=5, sticky=tk.W, padx=10, pady=5)
+        self.es_prior_entry.grid(column=1, row=7, padx=10, pady=5)
+        ttk.Label(parent, text="Enter observed demand for last period:").grid(column=0, row=8, sticky=tk.W, padx=10, pady=5)
         self.es_observed_entry = tk.Entry(parent, width=10)
-        self.es_observed_entry.grid(column=1, row=5, padx=10, pady=5)
+        self.es_observed_entry.grid(column=1, row=8, padx=10, pady=5)
         self.es_result = ttk.Label(parent, text="Result will appear here")
-        self.es_result.grid(column=2, row=5, padx=10, pady=5)
-        ttk.Button(parent, text="Calculate Exponential Smoothing", command=self.calculate_es).grid(column=3, row=5, padx=10, pady=5)
-        ttk.Button(parent, text="Export ES to Excel", command=self.export_es_to_excel).grid(column=4, row=5, padx=10, pady=5)
+        self.es_result.grid(column=2, row=8, padx=10, pady=5)
+        ttk.Button(parent, text="Calculate ES", command=self.calculate_es).grid(column=3, row=8, padx=10, pady=5)
+        ttk.Button(parent, text="Export ES to Excel", command=self.export_es_to_excel).grid(column=4, row=8, padx=10, pady=5)
 
         # Export All
-        ttk.Button(parent, text="Export All to Excel", command=self.export_all_to_excel).grid(column=0, row=6, columnspan=5, padx=10, pady=20)
+        ttk.Button(parent, text="Export All to Excel", command=self.export_all_to_excel).grid(column=0, row=9, columnspan=5, padx=10, pady=20)
+
+    def configure_grid_weights(self, parent):
+        for i in range(10):
+            parent.grid_rowconfigure(i, weight=1)
+        for i in range(5):
+            parent.grid_columnconfigure(i, weight=1)
 
     def calculate_sma(self):
         data = self.get_data()
@@ -98,8 +130,8 @@ class ForecastApp:
     def export_sma_to_excel(self):
         data = self.get_data()
         dates = [row.split()[0] for row in self.data_entry.get("1.0", tk.END).strip().split('\n')]
-        df = pd.DataFrame({'Date': dates, 'Demand (Dt)': data})
-        forecast_df = pd.DataFrame({
+        df = DataFrame({'Date': dates, 'Demand (Dt)': data})
+        forecast_df = DataFrame({
             'Date': ['Next Period'],
             'Simple Moving Average Forecast': [self.sma_result_value]
         })
@@ -109,10 +141,10 @@ class ForecastApp:
         data = self.get_data()
         weights = self.get_weights()
         dates = [row.split()[0] for row in self.data_entry.get("1.0", tk.END).strip().split('\n')]
-        df = pd.DataFrame({'Date': dates, 'Demand (Dt)': data})
-        weights_labels, weights_values = zip(*[row.split() for row in self.wma_weights_entry.get("1.0", tk.END).strip().split('\n')])
-        weights_df = pd.DataFrame({'Weight #': weights_labels, 'Weight': [float(value) for value in weights_values]})
-        forecast_df = pd.DataFrame({
+        df = DataFrame({'Date': dates, 'Demand (Dt)': data})
+        weights_labels = [f'w{i}' for i in range(len(weights))]
+        weights_df = DataFrame({'Weight #': weights_labels, 'Weight': weights})
+        forecast_df = DataFrame({
             'Date': ['Next Period'],
             'Weighted Moving Average Forecast': [self.wma_result_value]
         })
@@ -122,7 +154,7 @@ class ForecastApp:
         alpha = self.parse_number(self.es_alpha_entry.get())
         prior_forecast = self.parse_number(self.es_prior_entry.get())
         observed_demand = self.parse_number(self.es_observed_entry.get())
-        es_df = pd.DataFrame({
+        es_df = DataFrame({
             'Parameter': ['Smoothing Factor (alpha)', 'Prior Forecast', 'Observed Demand', 'Next Period Forecast'],
             'Value': [alpha, prior_forecast, observed_demand, self.es_result_value]
         })
@@ -139,8 +171,8 @@ class ForecastApp:
             self.sma_result_value = ts_forecast.simple_moving_average(sma_window)
 
         # Simple Moving Average
-        sma_df = pd.DataFrame({'Date': dates, 'Demand (Dt)': data})
-        sma_forecast_df = pd.DataFrame({
+        sma_df = DataFrame({'Date': dates, 'Demand (Dt)': data})
+        sma_forecast_df = DataFrame({
             'Date': ['Next Period'],
             'Simple Moving Average Forecast': [self.sma_result_value]
         })
@@ -153,10 +185,10 @@ class ForecastApp:
 
         # Weighted Moving Average
         weights = self.get_weights()
-        weights_labels, weights_values = zip(*[row.split() for row in self.wma_weights_entry.get("1.0", tk.END).strip().split('\n')])
-        wma_df = pd.DataFrame({'Date': dates, 'Demand (Dt)': data})
-        weights_df = pd.DataFrame({'Weight #': weights_labels, 'Weight': [float(value) for value in weights_values]})
-        wma_forecast_df = pd.DataFrame({
+        weights_labels = [f'w{i}' for i in range(len(weights))]
+        wma_df = DataFrame({'Date': dates, 'Demand (Dt)': data})
+        weights_df = DataFrame({'Weight #': weights_labels, 'Weight': weights})
+        wma_forecast_df = DataFrame({
             'Date': ['Next Period'],
             'Weighted Moving Average Forecast': [self.wma_result_value]
         })
@@ -170,12 +202,12 @@ class ForecastApp:
             self.es_result_value = ts_forecast.exponential_smoothing(alpha, prior_forecast, observed_demand)
 
         # Exponential Smoothing
-        es_df = pd.DataFrame({
+        es_df = DataFrame({
             'Parameter': ['Smoothing Factor (alpha)', 'Prior Forecast', 'Observed Demand', 'Next Period Forecast'],
             'Value': [alpha, prior_forecast, observed_demand, self.es_result_value]
         })
 
-        with pd.ExcelWriter(os.path.join(os.path.expanduser("~"), "Downloads", "forecast_results.xlsx"), engine='xlsxwriter') as writer:
+        with ExcelWriter(os.path.join(os.path.expanduser("~"), "Downloads", "forecast_results.xlsx"), engine='xlsxwriter') as writer:
             # Export Simple Moving Average
             sma_df.to_excel(writer, sheet_name='Simple Moving Average', index=False)
             sma_forecast_df.to_excel(writer, sheet_name='Simple Moving Average', startrow=len(sma_df) + 2, index=False)
@@ -203,7 +235,7 @@ class ForecastApp:
         messagebox.showinfo("Export Successful", "Results exported to forecast_results.xlsx")
 
     def export_to_excel(self, sheet_name, df1, df2, df3, filename):
-        with pd.ExcelWriter(os.path.join(os.path.expanduser("~"), "Downloads", filename), engine='xlsxwriter') as writer:
+        with ExcelWriter(os.path.join(os.path.expanduser("~"), "Downloads", filename), engine='xlsxwriter') as writer:
             df1.to_excel(writer, sheet_name=sheet_name, index=False)
             if df2 is not None:
                 df2.to_excel(writer, sheet_name=sheet_name, startrow=len(df1) + 2, index=False)
@@ -228,3 +260,11 @@ class ForecastApp:
                 worksheet.set_column('B:B', 30)  # Value
         
         messagebox.showinfo("Export Successful", f"Results exported to {filename}")
+
+
+# Setup and run the application
+if __name__ == "__main__":
+    root = tk.Tk()
+    root.title("Time Series Forecasting")
+    app = ForecastApp(root)
+    root.mainloop()
