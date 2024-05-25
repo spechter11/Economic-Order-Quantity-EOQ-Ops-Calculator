@@ -1,45 +1,56 @@
 import math
 from numpy import linspace
-from matplotlib.pyplot import plot, show, figure, axvline, axhline, xlabel, ylabel, title, legend, grid
+import matplotlib.pyplot as plt
 from scipy.stats import norm
 
 class EOQCalculator:
-    def __init__(self, demand_rate=None, demand_yearly=None, purchase_cost=None, holding_cost_rate=None, ordering_cost=None, standard_deviation=None, lead_time=None, service_level=None, weeks_per_year=50, EOQ=None):
-        self.demand_rate = demand_rate  # units per week
+    def __init__(self, demand_rate=None, demand_yearly=None, purchase_cost=None, holding_cost_rate=None, holding_cost_per_unit=None, ordering_cost=None, standard_deviation=None, standard_deviation_per_day=None, lead_time=None, lead_time_days=None, service_level=None, weeks_per_year=52, days_per_year=365, EOQ=None, toggle_holding_stock=True):
+        self.demand_rate = demand_rate  # units per day
         self.demand_yearly = demand_yearly  # units per year
         self.purchase_cost = purchase_cost  # cost per unit
         self.holding_cost_rate = holding_cost_rate  # holding cost rate per year
+        self.holding_cost_per_unit = holding_cost_per_unit  # holding cost per unit per year
         self.ordering_cost = ordering_cost  # cost per order
-        self.standard_deviation = standard_deviation  # standard deviation of demand per week
+        self.standard_deviation = standard_deviation  # standard deviation of demand
+        self.standard_deviation_per_day = standard_deviation_per_day  # standard deviation of demand per day
         self.lead_time = lead_time  # lead time in weeks
+        self.lead_time_days = lead_time_days  # lead time in days
         self.service_level = service_level  # service level as a decimal (e.g., 0.9 for 90%)
         self.weeks_per_year = weeks_per_year  # number of weeks in a year
+        self.days_per_year = days_per_year  # number of operational days in a year
         self.EOQ = EOQ
         self.H = None
         self.D = None
         self.z = None
-        
+        self.toggle_holding_stock = toggle_holding_stock
+
         self.update_calculations()
-    
+
     def update_calculations(self):
         if self.demand_rate is not None:
-            self.D = self.demand_rate * self.weeks_per_year  # annual demand in units/year
+            self.D = self.demand_rate * self.days_per_year  # annual demand in units/year
         elif self.demand_yearly is not None:
             self.D = self.demand_yearly
-            self.demand_rate = self.D / self.weeks_per_year  # calculate weekly demand from annual demand
+            self.demand_rate = self.D / self.days_per_year  # calculate daily demand from annual demand
         if self.holding_cost_rate is not None and self.purchase_cost is not None:
             self.H = self.holding_cost_rate * self.purchase_cost  # annual holding cost per unit
+        if self.holding_cost_per_unit is not None:
+            self.H = self.holding_cost_per_unit
         if self.D is not None and self.ordering_cost is not None and self.H is not None and self.EOQ is None:
             self.EOQ = self.calculate_eoq()
         if self.EOQ is not None:
             self.solve_missing_parameters()
         if self.service_level is not None:
             self.z = self.calculate_z_score(self.service_level)
-    
+        if self.standard_deviation_per_day is not None and self.days_per_year is not None:
+            self.standard_deviation = self.standard_deviation_per_day * math.sqrt(self.days_per_year)
+        if self.lead_time_days is not None:
+            self.lead_time = self.lead_time_days / (self.days_per_year / self.weeks_per_year)
+
     def solve_missing_parameters(self):
         if self.D is None and self.ordering_cost is not None and self.H is not None:
             self.D = (self.EOQ ** 2 * self.H) / (2 * self.ordering_cost)
-            self.demand_rate = self.D / self.weeks_per_year
+            self.demand_rate = self.D / self.days_per_year
         if self.ordering_cost is None and self.D is not None and self.H is not None:
             self.ordering_cost = (self.EOQ ** 2 * self.H) / (2 * self.D)
         if self.H is None and self.D is not None and self.ordering_cost is not None:
@@ -48,13 +59,10 @@ class EOQCalculator:
             self.holding_cost_rate = self.H / self.purchase_cost
         if self.purchase_cost is None and self.H is not None and self.holding_cost_rate is not None:
             self.purchase_cost = self.H / self.holding_cost_rate
-        if self.demand_rate is None and self.D is not None and self.weeks_per_year is not None:
-            self.demand_rate = self.D / self.weeks_per_year
-    
-    def set_parameters(self, demand_rate=None, demand_yearly=None, purchase_cost=None, holding_cost_rate=None, ordering_cost=None, standard_deviation=None, lead_time=None, service_level=None, weeks_per_year=None, EOQ=None):
-        """
-        Set or update the parameters for EOQ calculation.
-        """
+        if self.demand_rate is None and self.D is not None and self.days_per_year is not None:
+            self.demand_rate = self.D / self.days_per_year
+
+    def set_parameters(self, demand_rate=None, demand_yearly=None, purchase_cost=None, holding_cost_rate=None, holding_cost_per_unit=None, ordering_cost=None, standard_deviation=None, standard_deviation_per_day=None, lead_time=None, lead_time_days=None, service_level=None, weeks_per_year=None, days_per_year=None, EOQ=None, toggle_holding_stock=None):
         if demand_rate is not None:
             self.demand_rate = demand_rate
         if demand_yearly is not None:
@@ -63,172 +71,120 @@ class EOQCalculator:
             self.purchase_cost = purchase_cost
         if holding_cost_rate is not None:
             self.holding_cost_rate = holding_cost_rate
+        if holding_cost_per_unit is not None:
+            self.holding_cost_per_unit = holding_cost_per_unit
         if ordering_cost is not None:
             self.ordering_cost = ordering_cost
         if standard_deviation is not None:
             self.standard_deviation = standard_deviation
+        if standard_deviation_per_day is not None:
+            self.standard_deviation_per_day = standard_deviation_per_day
         if lead_time is not None:
             self.lead_time = lead_time
+        if lead_time_days is not None:
+            self.lead_time_days = lead_time_days
         if service_level is not None:
             self.service_level = service_level
         if weeks_per_year is not None:
             self.weeks_per_year = weeks_per_year
+        if days_per_year is not None:
+            self.days_per_year = days_per_year
         if EOQ is not None:
             self.EOQ = EOQ
-        
+        if toggle_holding_stock is not None:
+            self.toggle_holding_stock = toggle_holding_stock
+
         self.update_calculations()
-    
+
     def calculate_eoq(self):
-        """
-        Calculate the Economic Order Quantity (EOQ).
-        
-        Returns:
-        float: The calculated EOQ.
-        """
         if self.D is None or self.ordering_cost is None or self.H is None:
             raise ValueError("Insufficient parameters to calculate EOQ")
         return math.sqrt((2 * self.D * self.ordering_cost) / self.H)
-    
+
     def calculate_z_score(self, service_level):
-        """
-        Calculate the z-score for a given service level.
-        
-        Returns:
-        float: The calculated z-score.
-        """
         return norm.ppf(service_level)
-    
+
     def calculate_safety_stock(self):
+        if not self.toggle_holding_stock:
+            return 0
         if self.standard_deviation is None or self.lead_time is None or self.z is None:
             raise ValueError("Insufficient parameters to calculate safety stock")
         sigma_dLT = self.standard_deviation * math.sqrt(self.lead_time)
         safety_stock = self.z * sigma_dLT
-        print(f"Standard Deviation: {self.standard_deviation}")
-        print(f"Lead Time: {self.lead_time}")
-        print(f"z-score: {self.z}")
-        print(f"sigma_dLT: {sigma_dLT}")
-        print(f"Calculated Safety Stock: {safety_stock}")
-        return self.custom_round(safety_stock)
-    
+        return round(safety_stock, 1)
+
     def calculate_rop(self):
-        """
-        Calculate the Reorder Point (ROP).
-        
-        Returns:
-        float: The calculated ROP.
-        """
+        if not self.toggle_holding_stock:
+            return 0
         if self.demand_rate is None or self.lead_time is None:
             raise ValueError("Insufficient parameters to calculate ROP")
         safety_stock = self.calculate_safety_stock()
-        return self.custom_round(self.demand_rate * self.lead_time + safety_stock)
-    
+        return round(self.demand_rate * self.lead_time + safety_stock, 1)
+
     def annual_holding_cost(self):
-        """
-        Calculate the annual total cycle inventory holding costs.
-        
-        Returns:
-        float: The annual total cycle inventory holding costs.
-        """
         if self.EOQ is None:
             self.EOQ = self.calculate_eoq()
-        return self.custom_round((self.EOQ / 2) * self.H)
-    
+        return round((self.EOQ / 2) * self.H, 1)
+
     def annual_ordering_cost(self):
-        """
-        Calculate the annual total ordering costs.
-        
-        Returns:
-        float: The annual total ordering costs.
-        """
         if self.EOQ is None:
             self.EOQ = self.calculate_eoq()
-        return self.custom_round((self.D / self.EOQ) * self.ordering_cost)
-    
+        return round((self.D / self.EOQ) * self.ordering_cost, 1)
+
     def annual_safety_stock_holding_cost(self):
-        """
-        Calculate the annual total safety stock holding costs.
-        
-        Returns:
-        float: The annual total safety stock holding costs.
-        """
+        if not self.toggle_holding_stock:
+            return 0
         safety_stock = self.calculate_safety_stock()
-        return self.custom_round(safety_stock * self.H)
-    
+        return round(safety_stock * self.H, 1)
+
     def total_annual_cost(self):
-        """
-        Calculate the total annual cost.
-        
-        Returns:
-        float: The total annual cost.
-        """
-        return self.custom_round(self.annual_holding_cost() + self.annual_ordering_cost() + self.annual_safety_stock_holding_cost())
-    
+        return round(self.annual_holding_cost() + self.annual_ordering_cost() + self.annual_safety_stock_holding_cost(), 1)
+
     def time_between_orders(self):
-        """
-        Calculate the time between two orders (TBO).
-        
-        Returns:
-        float: The time between two orders (TBO) in weeks.
-        """
         if self.EOQ is None:
             self.EOQ = self.calculate_eoq()
-        return self.custom_round(self.EOQ / self.demand_rate)
-    
-    def custom_round(self, value):
-        """
-        Custom rounding function that rounds up if the decimal part is greater than 0.2,
-        otherwise rounds down.
-        """
-        integer_part = int(value)
-        decimal_part = value - integer_part
-        if decimal_part > 0.2:
-            return integer_part + 1
-        else:
-            return integer_part
-    
+        return round(self.EOQ / self.demand_rate, 1)
+
+    def number_of_orders_per_year(self):
+        if self.EOQ is None:
+            self.EOQ = self.calculate_eoq()
+        return round(self.D / self.EOQ, 1)
+
     def plot_costs(self):
-        """
-        Plot the EOQ model costs.
-        """
         if self.EOQ is None:
             self.EOQ = self.calculate_eoq()
-        
-        # Range of order quantities to plot
+
         Q_range = linspace(1, 2 * self.EOQ, 500)
 
-        # Calculate costs
-        holding_costs = (Q_range / 2) * self.H
+        holding_costs = (Q_range / 2) * self.H if self.toggle_holding_stock else 0
         ordering_costs = (self.D / Q_range) * self.ordering_cost
         total_costs = holding_costs + ordering_costs
 
-        figure(figsize=(10, 6))
-        plot(Q_range, holding_costs, label='Annual Holding Cost (Q/2 * H)')
-        plot(Q_range, ordering_costs, label='Annual Ordering Cost (D/Q * S)')
-        plot(Q_range, total_costs, label='Total Annual Cost')
-        axvline(self.EOQ, color='purple', linestyle='--', label=f'EOQ = {self.EOQ:.2f}')
-        axhline(min(total_costs), color='orange', linestyle='--', label=f'Minimum Total Cost = ${min(total_costs):.2f}')
-        xlabel('Order Quantity (Q)')
-        ylabel('Cost ($)')
-        title('EOQ Model: Costs vs. Order Quantity')
-        legend()
-        grid(True)
-        show()
-    
-    def print_results(self):
-        """
-        Print the EOQ and associated parameters and costs.
-        """
-        # Ensure that EOQ and necessary calculations are done
+        plt.figure(figsize=(10, 6))
+        plt.plot(Q_range, holding_costs, label='Annual Holding Cost (Q/2 * H)', color='green')
+        plt.plot(Q_range, ordering_costs, label='Annual Ordering Cost (D/Q * S)', color='blue')
+        plt.plot(Q_range, total_costs, label='Total Annual Cost', color='red')
+        plt.axvline(self.EOQ, color='purple', linestyle='--', label=f'EOQ = {self.EOQ:.2f}')
+        plt.axhline(min(total_costs), color='orange', linestyle='--', label=f'Minimum Total Cost = ${min(total_costs):.2f}')
+        plt.xlabel('Order Quantity (Q)')
+        plt.ylabel('Cost ($)')
+        plt.title('EOQ Model: Costs vs. Order Quantity')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+    def print_results(self, full_set=True):
         try:
             if self.EOQ is None:
                 self.calculate_eoq()
             holding_cost = self.annual_holding_cost()
             ordering_cost = self.annual_ordering_cost()
-            safety_stock = self.calculate_safety_stock()
-            safety_stock_cost = self.annual_safety_stock_holding_cost()
+            safety_stock = self.calculate_safety_stock() if self.toggle_holding_stock else None
+            safety_stock_cost = self.annual_safety_stock_holding_cost() if self.toggle_holding_stock else None
             total_cost = self.total_annual_cost()
             TBO = self.time_between_orders()
-            ROP = self.calculate_rop()
+            ROP = self.calculate_rop() if self.toggle_holding_stock else None
+            orders_per_year = self.number_of_orders_per_year()
         except ValueError as e:
             print(f"Error: {e}")
             holding_cost = None
@@ -238,51 +194,53 @@ class EOQCalculator:
             total_cost = None
             TBO = None
             ROP = None
-        
+            orders_per_year = None
+
         print("EOQ Calculation Results:")
-        print(f"Demand rate (units/week): {self.demand_rate if self.demand_rate is not None else 'None'}")
+        print(f"Demand rate (units/day): {self.demand_rate if self.demand_rate is not None else 'None'}")
         print(f"Demand (units/year): {self.D if self.D is not None else 'None'}")
         print(f"Purchase cost (dollars/unit): {self.purchase_cost if self.purchase_cost is not None else 'None'}")
         print(f"Holding cost rate (annual %): {self.holding_cost_rate if self.holding_cost_rate is not None else 'None'}")
+        print(f"Holding cost per unit (dollars/unit/year): {self.holding_cost_per_unit if self.holding_cost_per_unit is not None else 'None'}")
         print(f"Ordering cost (dollars/order): {self.ordering_cost if self.ordering_cost is not None else 'None'}")
         print(f"Weeks per year: {self.weeks_per_year if self.weeks_per_year is not None else 'None'}")
+        print(f"Days per year: {self.days_per_year if self.days_per_year is not None else 'None'}")
         print(f"Economic Order Quantity (EOQ): {self.EOQ} units" if self.EOQ is not None else "EOQ: None")
         print(f"Annual holding cost per unit (dollars/unit/year): {self.H if self.H is not None else 'None'}")
-        print(f"The annual total cycle inventory holding costs are: ${holding_cost}" if holding_cost is not None else "Annual total cycle inventory holding costs: None")
-        print(f"The annual total ordering costs are: ${ordering_cost}" if ordering_cost is not None else "Annual total ordering costs: None")
-        print(f"Safety stock (units): {safety_stock}" if safety_stock is not None else "Safety stock: None")
-        print(f"Annual total safety stock holding costs: ${safety_stock_cost}" if safety_stock_cost is not None else "Annual total safety stock holding costs: None")
+        print(f"Annual total cycle inventory holding costs: ${holding_cost}" if holding_cost is not None else "Annual total cycle inventory holding costs: None")
+        print(f"Annual total ordering costs: ${ordering_cost}" if ordering_cost is not None else "Annual total ordering costs: None")
+        if self.toggle_holding_stock:
+            print(f"Safety stock (units): {safety_stock}" if safety_stock is not None else "Safety stock: None")
+            print(f"Annual total safety stock holding costs: ${safety_stock_cost}" if safety_stock_cost is not None else "Annual total safety stock holding costs: None")
+            print(f"Reorder Point (ROP): {ROP} units" if ROP is not None else "Reorder Point (ROP): None")
         print(f"Total annual cost: ${total_cost}" if total_cost is not None else "Total annual cost: None")
-        print(f"The time between two orders (TBO) is: {TBO} weeks" if TBO is not None else "Time between two orders (TBO): None")
-        print(f"Reorder Point (ROP): {ROP} units" if ROP is not None else "Reorder Point (ROP): None")
+        print(f"Time between orders (TBO): {TBO} days" if TBO is not None else "Time between orders (TBO): None")
+        print(f"Number of orders per year: {orders_per_year}" if orders_per_year is not None else "Number of orders per year: None")
 
-# Test the EOQCalculator with the provided example
 def main():
-    demand_rate = 18  # units per week
-    demand_yearly = None  # units per year, not provided
+    demand_rate_per_day = 2.57  # units per day
     purchase_cost = 60  # dollars per unit
-    holding_cost_rate = 0.25  # annual holding cost rate
+    holding_cost_per_unit = 15  # dollars per unit per year
     ordering_cost = 45  # dollars per order
-    standard_deviation = 5  # units per week
-    lead_time = 2  # weeks
+    standard_deviation_per_day = 0.71  # units per day
+    lead_time_days = 14  # days
     service_level = 0.9  # 90% service level
-    weeks_per_year = 52  # number of weeks in a year
-    EOQ = None  # EOQ is to be calculated
+    days_per_year = 365  # number of days in a year
+    toggle_holding_stock = False  # toggle holding stock
 
     eoq_calculator = EOQCalculator(
-        demand_rate=demand_rate,
-        demand_yearly=demand_yearly,
+        demand_rate=demand_rate_per_day,
         purchase_cost=purchase_cost,
-        holding_cost_rate=holding_cost_rate,
+        holding_cost_per_unit=holding_cost_per_unit,
         ordering_cost=ordering_cost,
-        standard_deviation=standard_deviation,
-        lead_time=lead_time,
+        standard_deviation_per_day=standard_deviation_per_day,
+        lead_time_days=lead_time_days,
         service_level=service_level,
-        weeks_per_year=weeks_per_year,
-        EOQ=EOQ
+        days_per_year=days_per_year,
+        toggle_holding_stock=toggle_holding_stock
     )
 
-    eoq_calculator.print_results()
+    eoq_calculator.print_results(full_set=True)
 
 if __name__ == "__main__":
     main()

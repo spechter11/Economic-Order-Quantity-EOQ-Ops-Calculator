@@ -25,16 +25,19 @@ class EOQApp:
         # Labels and dropdown menus for inputs
         self.entries = {}
         parameters = [
-            ("Demand Rate (units/week)", "demand_rate"),
+            ("Demand Rate (units/day)", "demand_rate"),
             ("Demand Yearly (units/year)", "demand_yearly"),
             ("Purchase Cost (dollars/unit)", "purchase_cost"),
             ("Holding Cost Rate (annual %)", "holding_cost_rate"),
+            ("Holding Cost per Unit (dollars/unit/year)", "holding_cost_per_unit"),
             ("Ordering Cost (dollars/order)", "ordering_cost"),
-            ("Standard Deviation (units/week)", "standard_deviation"),
-            ("Lead Time (weeks)", "lead_time"),
+            ("Standard Deviation (units/day)", "standard_deviation_per_day"),
+            ("Lead Time (days)", "lead_time_days"),
             ("Service Level (decimal)", "service_level"),
             ("Weeks per Year", "weeks_per_year"),
-            ("EOQ", "EOQ")
+            ("Days per Year", "days_per_year"),
+            ("EOQ", "EOQ"),
+            ("Toggle Holding Stock (yes/no)", "toggle_holding_stock")
         ]
 
         for idx, (label_text, var_name) in enumerate(parameters):
@@ -42,7 +45,10 @@ class EOQApp:
             label.grid(row=idx, column=0, padx=5, pady=5, sticky=tk.W)
             
             var = tk.StringVar(value="None")
-            dropdown = ttk.Combobox(input_frame, textvariable=var, values=["None"])
+            if var_name == "toggle_holding_stock":
+                dropdown = ttk.Combobox(input_frame, textvariable=var, values=["yes", "no"])
+            else:
+                dropdown = ttk.Combobox(input_frame, textvariable=var, values=["None"])
             dropdown.grid(row=idx, column=1, padx=5, pady=5, sticky="ew")
             self.entries[var_name] = dropdown
 
@@ -50,13 +56,17 @@ class EOQApp:
         button_frame = ttk.Frame(parent)
         button_frame.grid(row=3, column=0, columnspan=2, pady=10, sticky="ew")
 
-        # Calculate button
-        self.calculate_button = ttk.Button(button_frame, text="Calculate", command=self.calculate)
-        self.calculate_button.grid(row=0, column=0, padx=10)
+        # Calculate EOQ button
+        self.calculate_eoq_button = ttk.Button(button_frame, text="Calculate EOQ Only", command=self.calculate_eoq_only)
+        self.calculate_eoq_button.grid(row=0, column=0, padx=10)
+
+        # Calculate Full button
+        self.calculate_full_button = ttk.Button(button_frame, text="Calculate Full Set", command=self.calculate_full_set)
+        self.calculate_full_button.grid(row=0, column=1, padx=10)
 
         # Visualize button
         self.plot_button = ttk.Button(button_frame, text="Visualize", command=self.visualize)
-        self.plot_button.grid(row=0, column=1, padx=10)
+        self.plot_button.grid(row=0, column=2, padx=10)
 
         # Text area for displaying results
         self.results_text = tk.Text(parent, height=15, width=80, wrap=tk.WORD)
@@ -80,14 +90,22 @@ class EOQApp:
             value = dropdown.get()
             if value == "None":
                 inputs[var_name] = None
+            elif var_name == "toggle_holding_stock":
+                inputs[var_name] = value.lower() == "yes"
             else:
                 try:
-                    inputs[var_name] = float(value) if var_name not in ["weeks_per_year", "EOQ"] else int(value)
+                    inputs[var_name] = float(value) if var_name not in ["weeks_per_year", "days_per_year", "EOQ"] else int(value)
                 except ValueError:
                     inputs[var_name] = None
         return inputs
 
-    def calculate(self):
+    def calculate_eoq_only(self):
+        self.calculate(full_set=False)
+
+    def calculate_full_set(self):
+        self.calculate(full_set=True)
+
+    def calculate(self, full_set):
         inputs = self.get_input_values()
         if inputs is None:
             return
@@ -100,25 +118,32 @@ class EOQApp:
                 demand_yearly=inputs.get('demand_yearly'),
                 purchase_cost=inputs.get('purchase_cost'),
                 holding_cost_rate=inputs.get('holding_cost_rate'),
+                holding_cost_per_unit=inputs.get('holding_cost_per_unit'),
                 ordering_cost=inputs.get('ordering_cost'),
-                standard_deviation=inputs.get('standard_deviation'),
-                lead_time=inputs.get('lead_time'),
+                standard_deviation=inputs.get('standard_deviation_per_day'),
+                lead_time=inputs.get('lead_time_days'),
                 service_level=inputs.get('service_level'),
-                weeks_per_year=inputs.get('weeks_per_year')
+                weeks_per_year=inputs.get('weeks_per_year'),
+                days_per_year=inputs.get('days_per_year'),
+                EOQ=inputs.get('EOQ'),
+                toggle_holding_stock=inputs.get('toggle_holding_stock')
             )
 
-            # Generate and display tables
-            input_table = processor.generate_input_table()
-            results_table = processor.generate_results_table()
+            if full_set:
+                # Generate and display tables
+                input_table = processor.generate_input_table()
+                results_table = processor.generate_results_table()
 
-            print("Input Table:\n", input_table)  # Debugging: Print input table
-            print("Results Table:\n", results_table)  # Debugging: Print results table
+                print("Input Table:\n", input_table)  # Debugging: Print input table
+                print("Results Table:\n", results_table)  # Debugging: Print results table
 
-            self.display_results(input_table, results_table)
+                self.display_results(input_table, results_table)
 
-            # Export results to Excel
-            processor.export_to_excel(self.excel_path)
-            messagebox.showinfo("Download Successful", "Downloaded Solution Excel. Check your Downloads folder.")
+                # Export results to Excel
+                processor.export_to_excel(self.excel_path)
+                messagebox.showinfo("Download Successful", "Downloaded Solution Excel. Check your Downloads folder.")
+            else:
+                processor.calculator.print_results(full_set=False)
 
         except Exception as e:
             messagebox.showerror("Calculation Error", f"An error occurred during calculation: {e}")
