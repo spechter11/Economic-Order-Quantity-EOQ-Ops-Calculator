@@ -138,7 +138,10 @@ class EOQCalculator:
         return round(safety_stock * self.H, 1)
 
     def total_annual_cost(self):
-        return round(self.annual_holding_cost() + self.annual_ordering_cost() + self.annual_safety_stock_holding_cost(), 1)
+        holding_cost = self.annual_holding_cost()
+        ordering_cost = self.annual_ordering_cost()
+        safety_stock_cost = self.annual_safety_stock_holding_cost() if self.toggle_holding_stock else 0
+        return round(holding_cost + ordering_cost + safety_stock_cost, 1)
 
     def time_between_orders(self):
         if self.EOQ is None:

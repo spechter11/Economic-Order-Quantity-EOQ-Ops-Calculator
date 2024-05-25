@@ -144,16 +144,12 @@ class EOQApp:
                 messagebox.showinfo("Download Successful", "Downloaded Solution Excel. Check your Downloads folder.")
             else:
                 processor.calculator.print_results(full_set=False)
+                self.results_text.delete(1.0, tk.END)
+                self.results_text.insert(tk.END, "Inputs Table:\n")
+                self.results_text.insert(tk.END, processor.generate_input_table().to_string(index=False))
 
         except Exception as e:
             messagebox.showerror("Calculation Error", f"An error occurred during calculation: {e}")
-
-    def display_results(self, input_table, results_table):
-        self.results_text.delete(1.0, tk.END)
-        self.results_text.insert(tk.END, "Inputs Table:\n")
-        self.results_text.insert(tk.END, input_table.to_string(index=False))
-        self.results_text.insert(tk.END, "\n\nResults Table:\n")
-        self.results_text.insert(tk.END, results_table.to_string(index=False))
 
     def visualize(self):
         inputs = self.get_input_values()
