@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from eop_processor import EOQProcessor
 import os
+import numpy as np
 
 class EOQApp:
     def __init__(self, parent):
@@ -94,7 +95,10 @@ class EOQApp:
                 inputs[var_name] = value.lower() == "yes"
             else:
                 try:
-                    inputs[var_name] = float(value) if var_name not in ["weeks_per_year", "days_per_year", "EOQ"] else int(value)
+                    if var_name in ["weeks_per_year", "days_per_year", "EOQ"]:
+                        inputs[var_name] = int(value)
+                    else:
+                        inputs[var_name] = float(value)
                 except ValueError:
                     inputs[var_name] = None
         return inputs
@@ -144,12 +148,27 @@ class EOQApp:
                 messagebox.showinfo("Download Successful", "Downloaded Solution Excel. Check your Downloads folder.")
             else:
                 processor.calculator.print_results(full_set=False)
-                self.results_text.delete(1.0, tk.END)
-                self.results_text.insert(tk.END, "Inputs Table:\n")
-                self.results_text.insert(tk.END, processor.generate_input_table().to_string(index=False))
+                self.display_eoq_only_results(processor)
 
         except Exception as e:
             messagebox.showerror("Calculation Error", f"An error occurred during calculation: {e}")
+
+    def display_results(self, input_table, results_table):
+        self.results_text.delete(1.0, tk.END)
+        self.results_text.insert(tk.END, "Inputs Table:\n")
+        self.results_text.insert(tk.END, input_table.to_string(index=False))
+        self.results_text.insert(tk.END, "\n\nResults Table:\n")
+        self.results_text.insert(tk.END, results_table.to_string(index=False))
+
+    def display_eoq_only_results(self, processor):
+        input_table = processor.generate_input_table()
+        self.results_text.delete(1.0, tk.END)
+        self.results_text.insert(tk.END, "Inputs Table:\n")
+        self.results_text.insert(tk.END, input_table.to_string(index=False))
+        self.results_text.insert(tk.END, "\n\nEOQ Calculation Results:\n")
+        self.results_text.insert(tk.END, f"Economic Order Quantity (EOQ): {processor.calculator.EOQ} units\n")
+        self.results_text.insert(tk.END, f"Number of Orders per Year: {processor.calculator.number_of_orders_per_year()}\n")
+        self.results_text.insert(tk.END, f"Time Between Orders (TBO): {processor.calculator.time_between_orders()} days\n")
 
     def visualize(self):
         inputs = self.get_input_values()
