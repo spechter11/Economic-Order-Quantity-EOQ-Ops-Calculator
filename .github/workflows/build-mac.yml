@@ -25,11 +25,11 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi  # Install other dependencies if requirements.txt exists.
 
     - name: Build Executable
-      run: pyinstaller --onefile your_script_name.py  # Replace 'your_script_name.py' with the name of your main Python script.
+      run: pyinstaller --onefile main_gui.py  # Replace 'your_script_name.py' with the name of your main Python script.
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v2
       with:
         name: macOS-executable
-        path: dist/your_script_name  # Replace 'your_script_name' with the name of your output file from PyInstaller.
+        path: dist/main_gui  # Replace 'your_script_name' with the name of your output file from PyInstaller.
 
