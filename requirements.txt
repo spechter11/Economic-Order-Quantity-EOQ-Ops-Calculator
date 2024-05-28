@@ -7,14 +7,12 @@ matplotlib==3.7.5
 numpy==1.24.3
 packaging==24.0
 pandas==2.0.1
-pefile==2023.2.7
 Pillow==8.4.0
 PyInstaller==4.5.1
 pyinstaller-hooks-contrib==2023.10
 pyparsing==2.4.7
 python-dateutil==2.8.1
 pytz==2020.1
-pywin32-ctypes==0.2.0
 six==1.15.0
 scipy==1.7.1
 tzdata==2020.1
