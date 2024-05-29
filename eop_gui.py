@@ -3,14 +3,11 @@ from tkinter import ttk, messagebox
 from eop_processor import EOQProcessor
 import os
 import numpy as np
-
+valid_vals = ["", "None"]
 class EOQApp:
-    def __init__(self, parent, root, scale):
+    def __init__(self, parent, root):
         self.root = root
-        self.scale = scale
         self.parent = parent
-        self.cboptions = ("Helvetica", int(15 * self.scale))
-        self.valid_vals = ["", "None"]
         self.create_eoq_widgets(parent)
         self.configure_grid_weights(parent)
 
@@ -19,14 +16,14 @@ class EOQApp:
         return False
 
     def validate_val(self, new_value):
-        if new_value in self.valid_vals or new_value.isdigit():
+        if new_value in valid_vals or new_value.isdigit():
             return True
         else:
             return self.error_ret(new_value)
 
     def validate_percentage(self, new_value):
-        if new_value in self.valid_vals or self.is_valid_decimal(new_value):
-            if new_value not in self.valid_vals and float(new_value) <= 100.00:
+        if new_value in valid_vals or self.is_valid_decimal(new_value):
+            if new_value not in valid_vals and float(new_value) <= 100.00:
                 return True
             return False
         else:
@@ -40,23 +37,23 @@ class EOQApp:
             return False
 
     def validate_decimal(self, new_value):
-        if new_value in self.valid_vals or self.is_valid_decimal(new_value):
+        if new_value in valid_vals or self.is_valid_decimal(new_value):
             return True
         else:
             return self.error_ret(new_value)
 
     def create_eoq_widgets(self, parent):
         # Adding a title
-        title_label = ttk.Label(parent, text="EOQ Calculator", font=("Helvetica", int(25 * self.scale), "bold"))  # Adjusted font size
-        title_label.grid(row=0, column=0, columnspan=2, pady=int(10 * self.scale))  # Adjusted padding
+        title_label = ttk.Label(parent, text="EOQ Calculator", font=("Helvetica", 16, "bold"))
+        title_label.grid(row=0, column=0, columnspan=2, pady=10)
 
         # Adding instructions
-        instructions_label = ttk.Label(parent, text="Please enter the following parameters. You can leave any field as 'None'.", font=("Helvetica", int(15 * self.scale)))
-        instructions_label.grid(row=1, column=0, columnspan=2, pady=int(5 * self.scale))  # Adjusted padding
+        instructions_label = ttk.Label(parent, text="Please enter the following parameters. You can leave any field as 'None'.")
+        instructions_label.grid(row=1, column=0, columnspan=2, pady=5)
 
         # Frame for input fields
         input_frame = ttk.Frame(parent)
-        input_frame.grid(row=2, column=0, columnspan=2, padx=int(10 * self.scale), pady=int(10 * self.scale), sticky="nsew")  # Adjusted padding
+        input_frame.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
 
         # Labels and dropdown menus for inputs
         self.entries = {}
@@ -77,39 +74,38 @@ class EOQApp:
         ]
 
         for idx, (label_text, var_name, validate_command) in enumerate(parameters):
-            label = ttk.Label(input_frame, text=label_text, font=("Helvetica", int(15 * self.scale)))
-            label.grid(row=idx, column=0, padx=int(5 * self.scale), pady=int(5 * self.scale), sticky=tk.W)  # Adjusted padding
+            label = ttk.Label(input_frame, text=label_text)
+            label.grid(row=idx, column=0, padx=5, pady=5, sticky=tk.W)
             var = tk.StringVar(value="None")
             if var_name == "toggle_holding_stock":
-                dropdown = ttk.Combobox(input_frame, textvariable=var, values=["yes", "no"], font=self.cboptions)
+                dropdown = ttk.Combobox(input_frame, textvariable=var, values=["yes", "no"])
             else:
                 if validate_command:
-                    dropdown = ttk.Combobox(input_frame, textvariable=var, values=[self.valid_vals[1]], validate='key', validatecommand=(validate_command, '%P'), font=self.cboptions)
+                    dropdown = ttk.Combobox(input_frame, textvariable=var, values=[valid_vals[1]], validate='key', validatecommand=(validate_command, '%P'))
                 else:
-                    dropdown = ttk.Combobox(input_frame, textvariable=var, values=[self.valid_vals[1]], font=self.cboptions)
-            dropdown.option_add('*TCombobox*Listbox.font', self.cboptions)  # Apply font to listbox
-            dropdown.grid(row=idx, column=1, padx=int(5 * self.scale), pady=int(5 * self.scale), sticky="ew")  # Adjusted padding
+                    dropdown = ttk.Combobox(input_frame, textvariable=var, values=[valid_vals[1]])
+            dropdown.grid(row=idx, column=1, padx=5, pady=5, sticky="ew")
             self.entries[var_name] = dropdown
 
         # Frame for buttons
         button_frame = ttk.Frame(parent)
-        button_frame.grid(row=3, column=0, columnspan=2, pady=int(10 * self.scale), sticky="ew")  # Adjusted padding
+        button_frame.grid(row=3, column=0, columnspan=2, pady=10, sticky="ew")
 
         # Calculate EOQ button
-        self.calculate_eoq_button = ttk.Button(button_frame, text="Calculate EOQ Only", command=self.calculate_eoq_only, padding=(10, 5))
-        self.calculate_eoq_button.grid(row=0, column=0, padx=int(10 * self.scale))  # Adjusted padding
+        self.calculate_eoq_button = ttk.Button(button_frame, text="Calculate EOQ Only", command=self.calculate_eoq_only)
+        self.calculate_eoq_button.grid(row=0, column=0, padx=10)
 
         # Calculate Full button
-        self.calculate_full_button = ttk.Button(button_frame, text="Calculate Full Set", command=self.calculate_full_set, padding=(10, 5))
-        self.calculate_full_button.grid(row=0, column=1, padx=int(10 * self.scale))  # Adjusted padding
+        self.calculate_full_button = ttk.Button(button_frame, text="Calculate Full Set", command=self.calculate_full_set)
+        self.calculate_full_button.grid(row=0, column=1, padx=10)
 
         # Visualize button
-        self.plot_button = ttk.Button(button_frame, text="Visualize", command=self.visualize, padding=(10, 5))
-        self.plot_button.grid(row=0, column=2, padx=int(10 * self.scale))  # Adjusted padding
+        self.plot_button = ttk.Button(button_frame, text="Visualize", command=self.visualize)
+        self.plot_button.grid(row=0, column=2, padx=10)
 
         # Text area for displaying results
-        self.results_text = tk.Text(parent, height=25, width=15, font=("Helvetica", int(15 * self.scale)), wrap=tk.WORD)
-        self.results_text.grid(row=2, column=1, columnspan=2, padx=int(10 * self.scale), pady=int(10 * self.scale), sticky="nsew")  # Adjusted padding
+        self.results_text = tk.Text(parent, height=15, width=80, wrap=tk.WORD)
+        self.results_text.grid(row=4, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
         
         # Path for saved Excel file
         self.excel_path = os.path.join(os.path.expanduser("~"), "Downloads", "eoq_results.xlsx")
@@ -127,7 +123,7 @@ class EOQApp:
         inputs = {}
         for var_name, dropdown in self.entries.items():
             value = dropdown.get()
-            if value == self.valid_vals[1]:
+            if value == valid_vals[1]:
                 inputs[var_name] = None
             elif var_name == "toggle_holding_stock":
                 inputs[var_name] = value.lower() == "yes"
@@ -191,30 +187,22 @@ class EOQApp:
         except Exception as e:
             messagebox.showerror("Calculation Error", f"An error occurred during calculation: {e}")
 
-    def display_input(self, input_table):
-        for i in range(len(input_table["Parameter"])):
-            self.results_text.insert(tk.END, f"{input_table['Parameter'][i]}: {str(input_table['Value'][i])}\n", 'left')
-
-    def display_result(self, input_table):
-        for i in range(len(input_table["Parameter"])):
-            self.results_text.insert(tk.END, f"{input_table['Parameter'][i]}: {str(input_table['Value'][i])}         {input_table['Calculation'][i]}\n", 'left')
-
     def display_results(self, input_table, results_table):
         self.results_text.delete(1.0, tk.END)
-        self.results_text.insert(tk.END, "Inputs Table:\n", 'left')
-        self.display_input(input_table)
-        self.results_text.insert(tk.END, "\n\nResults Table:\n", 'left')
-        self.display_result(results_table)
+        self.results_text.insert(tk.END, "Inputs Table:\n")
+        self.results_text.insert(tk.END, input_table.to_string(index=False))
+        self.results_text.insert(tk.END, "\n\nResults Table:\n")
+        self.results_text.insert(tk.END, results_table.to_string(index=False))
 
     def display_eoq_only_results(self, processor):
         input_table = processor.generate_input_table()
         self.results_text.delete(1.0, tk.END)
-        self.results_text.insert(tk.END, "Inputs Table:\n", 'left')
-        self.display_input(input_table)
-        self.results_text.insert(tk.END, "\n\nEOQ Calculation Results:\n", 'left')
-        self.results_text.insert(tk.END, f"Economic Order Quantity (EOQ): {processor.calculator.EOQ} units\n", 'left')
-        self.results_text.insert(tk.END, f"Number of Orders per Year: {processor.calculator.number_of_orders_per_year()}\n", 'left')
-        self.results_text.insert(tk.END, f"Time Between Orders (TBO): {processor.calculator.time_between_orders()} days\n", 'left')
+        self.results_text.insert(tk.END, "Inputs Table:\n")
+        self.results_text.insert(tk.END, input_table.to_string(index=False))
+        self.results_text.insert(tk.END, "\n\nEOQ Calculation Results:\n")
+        self.results_text.insert(tk.END, f"Economic Order Quantity (EOQ): {processor.calculator.EOQ} units\n")
+        self.results_text.insert(tk.END, f"Number of Orders per Year: {processor.calculator.number_of_orders_per_year()}\n")
+        self.results_text.insert(tk.END, f"Time Between Orders (TBO): {processor.calculator.time_between_orders()} days\n")
 
     def visualize(self):
         inputs = self.get_input_values()
