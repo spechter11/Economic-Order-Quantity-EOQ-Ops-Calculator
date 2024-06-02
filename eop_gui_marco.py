@@ -3,12 +3,44 @@ from tkinter import ttk, messagebox
 from eop_processor import EOQProcessor
 import os
 import numpy as np
-
+valid_vals = ["", "None"]
 class EOQApp:
-    def __init__(self, parent):
+    def __init__(self, parent, root):
+        self.root = root
         self.parent = parent
         self.create_eoq_widgets(parent)
         self.configure_grid_weights(parent)
+
+    def error_ret(self, new_value):
+        messagebox.showerror("Invalid Entry", f"'{new_value}' is not a valid integer.")
+        return False
+
+    def validate_val(self, new_value):
+        if new_value in valid_vals or new_value.isdigit():
+            return True
+        else:
+            return self.error_ret(new_value)
+
+    def validate_percentage(self, new_value):
+        if new_value in valid_vals or self.is_valid_decimal(new_value):
+            if new_value not in valid_vals and float(new_value) <= 100.00:
+                return True
+            return False
+        else:
+            return self.error_ret(new_value)
+
+    def is_valid_decimal(self, value):
+        try:
+            float(value)
+            return True
+        except ValueError:
+            return False
+
+    def validate_decimal(self, new_value):
+        if new_value in valid_vals or self.is_valid_decimal(new_value):
+            return True
+        else:
+            return self.error_ret(new_value)
 
     def create_eoq_widgets(self, parent):
         # Adding a title
@@ -26,30 +58,32 @@ class EOQApp:
         # Labels and dropdown menus for inputs
         self.entries = {}
         parameters = [
-            ("Demand Rate (units/day)", "demand_rate"),
-            ("Demand Yearly (units/year)", "demand_yearly"),
-            ("Purchase Cost (dollars/unit)", "purchase_cost"),
-            ("Holding Cost Rate (annual %)", "holding_cost_rate"),
-            ("Holding Cost per Unit (dollars/unit/year)", "holding_cost_per_unit"),
-            ("Ordering Cost (dollars/order)", "ordering_cost"),
-            ("Standard Deviation (units/day)", "standard_deviation_per_day"),
-            ("Lead Time (days)", "lead_time_days"),
-            ("Service Level (decimal)", "service_level"),
-            ("Weeks per Year", "weeks_per_year"),
-            ("Days per Year", "days_per_year"),
-            ("EOQ", "EOQ"),
-            ("Toggle Holding Stock (yes/no)", "toggle_holding_stock")
+            ("Demand Rate (units/day)", "demand_rate", self.root.register(self.validate_val)),
+            ("Demand Yearly (units/year)", "demand_yearly", self.root.register(self.validate_val)),
+            ("Purchase Cost (dollars/unit)", "purchase_cost", self.root.register(self.validate_decimal)),
+            ("Holding Cost Rate (annual %)", "holding_cost_rate", self.root.register(self.validate_percentage)),
+            ("Holding Cost per Unit (dollars/unit/year)", "holding_cost_per_unit", self.root.register(self.validate_decimal)),
+            ("Ordering Cost (dollars/order)", "ordering_cost", self.root.register(self.validate_decimal)),
+            ("Standard Deviation (units/day)", "standard_deviation_per_day", self.root.register(self.validate_decimal)),
+            ("Lead Time (days)", "lead_time_days", self.root.register(self.validate_val)),
+            ("Service Level (decimal)", "service_level", self.root.register(self.validate_decimal)),
+            ("Weeks per Year", "weeks_per_year", self.root.register(self.validate_val)),
+            ("Days per Year", "days_per_year", self.root.register(self.validate_val)),
+            ("EOQ", "EOQ", self.root.register(self.validate_decimal)),
+            ("Toggle Holding Stock (yes/no)", "toggle_holding_stock", None)
         ]
 
-        for idx, (label_text, var_name) in enumerate(parameters):
+        for idx, (label_text, var_name, validate_command) in enumerate(parameters):
             label = ttk.Label(input_frame, text=label_text)
             label.grid(row=idx, column=0, padx=5, pady=5, sticky=tk.W)
-            
             var = tk.StringVar(value="None")
             if var_name == "toggle_holding_stock":
                 dropdown = ttk.Combobox(input_frame, textvariable=var, values=["yes", "no"])
             else:
-                dropdown = ttk.Combobox(input_frame, textvariable=var, values=["None"])
+                if validate_command:
+                    dropdown = ttk.Combobox(input_frame, textvariable=var, values=[valid_vals[1]], validate='key', validatecommand=(validate_command, '%P'))
+                else:
+                    dropdown = ttk.Combobox(input_frame, textvariable=var, values=[valid_vals[1]])
             dropdown.grid(row=idx, column=1, padx=5, pady=5, sticky="ew")
             self.entries[var_name] = dropdown
 
@@ -89,7 +123,7 @@ class EOQApp:
         inputs = {}
         for var_name, dropdown in self.entries.items():
             value = dropdown.get()
-            if value == "None":
+            if value == valid_vals[1]:
                 inputs[var_name] = None
             elif var_name == "toggle_holding_stock":
                 inputs[var_name] = value.lower() == "yes"
