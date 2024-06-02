@@ -7,40 +7,18 @@ from time_series_forecast import TimeSeriesForecast
 
 
 class ForecastApp:
-    def __init__(self, parent, scale):
+    def __init__(self, parent):
         self.parent = parent
-        self.scale = scale  # Adjust this scale factor as needed
         self.sma_result_value = None
         self.wma_result_value = None
         self.es_result_value = None
-        self.create_scrollable_canvas(parent)
-        self.create_forecast_widgets(self.scrollable_frame)
-        self.configure_grid_weights(self.scrollable_frame)
-
-    def create_scrollable_canvas(self, parent):
-        canvas = tk.Canvas(parent)
-        scrollbar = ttk.Scrollbar(parent, orient="vertical", command=canvas.yview)
-        scrollable_frame = ttk.Frame(canvas)
-
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(
-                scrollregion=canvas.bbox("all")
-            )
-        )
-
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-
-        self.scrollable_frame = scrollable_frame
+        self.create_forecast_widgets(parent)
+        self.configure_grid_weights(parent)
 
     def create_forecast_widgets(self, parent):
         # Adding a title
-        title_label = ttk.Label(parent, text="Time Series Forecasting", font=("Helvetica", int(25 * self.scale), "bold"))
-        title_label.grid(row=0, column=0, columnspan=5, pady=10, sticky="ew")
+        title_label = ttk.Label(parent, text="Time Series Forecasting", font=("Helvetica", 16, "bold"))
+        title_label.grid(row=0, column=0, columnspan=5, pady=10)
 
         # Instructions
         instructions = (
@@ -58,52 +36,51 @@ class ForecastApp:
             "\nw6 0.05"
             "\nw7 0.05"
         )
-        instructions_label = ttk.Label(parent, text=instructions, justify=tk.LEFT, font=("Helvetica", int(15 * self.scale), "bold"))
-        instructions_label.grid(row=1, column=0, columnspan=5, pady=5, sticky="ew", padx=10)
+        instructions_label = ttk.Label(parent, text=instructions, justify=tk.LEFT)
+        instructions_label.grid(row=1, column=0, columnspan=5, pady=5, sticky=tk.W, padx=10)
 
         # Input fields for data
-        text_font = ("Helvetica", int(15 * self.scale))  # Define a larger font size for text widgets
-        ttk.Label(parent, text="Enter time series data:", font=("Helvetica", int(15 * self.scale))).grid(column=0, row=2, sticky=tk.W, padx=10, pady=5)
-        self.data_entry = tk.Text(parent, height=10, width=50, font=text_font)
-        self.data_entry.grid(column=1, row=2, columnspan=4, padx=10, pady=5, sticky="ew")
+        ttk.Label(parent, text="Enter time series data:").grid(column=0, row=2, sticky=tk.W, padx=10, pady=5)
+        self.data_entry = tk.Text(parent, height=10, width=50)
+        self.data_entry.grid(column=1, row=2, columnspan=4, padx=10, pady=5)
         self.data_entry.insert(tk.END, "Date1 10\nDate2 15\nDate3 20\nDate4 25\nDate5 30\nDate6 35\nDate7 40\nDate8 45")  # Sample data
 
         # Simple Moving Average
-        ttk.Label(parent, text="Simple Moving Average: Enter window size:", font=("Helvetica", int(15 * self.scale))).grid(column=0, row=3, sticky=tk.W, padx=10, pady=5)
-        self.sma_window_entry = tk.Entry(parent, width=10, font=text_font)
-        self.sma_window_entry.grid(column=1, row=3, padx=10, pady=5, sticky="ew")
-        self.sma_result = ttk.Label(parent, text="Result will appear here", font=("Helvetica", int(15 * self.scale)))
-        self.sma_result.grid(column=2, row=3, padx=10, pady=5, sticky="ew")
-        ttk.Button(parent, text="Calculate SMA", command=self.calculate_sma, padding=(10, 5)).grid(column=3, row=3, padx=10, pady=5, sticky="ew")
-        ttk.Button(parent, text="Export SMA to Excel", command=self.export_sma_to_excel, padding=(10, 5)).grid(column=4, row=3, padx=10, pady=5, sticky="ew")
+        ttk.Label(parent, text="Simple Moving Average: Enter window size:").grid(column=0, row=3, sticky=tk.W, padx=10, pady=5)
+        self.sma_window_entry = tk.Entry(parent, width=10)
+        self.sma_window_entry.grid(column=1, row=3, padx=10, pady=5)
+        self.sma_result = ttk.Label(parent, text="Result will appear here")
+        self.sma_result.grid(column=2, row=3, padx=10, pady=5)
+        ttk.Button(parent, text="Calculate SMA", command=self.calculate_sma).grid(column=3, row=3, padx=10, pady=5)
+        ttk.Button(parent, text="Export SMA to Excel", command=self.export_sma_to_excel).grid(column=4, row=3, padx=10, pady=5)
 
         # Weighted Moving Average
-        ttk.Label(parent, text="Weighted Moving Average: Enter weights:", font=("Helvetica", int(15 * self.scale))).grid(column=0, row=4, sticky=tk.W, padx=10, pady=5)
-        self.wma_weights_entry = tk.Text(parent, height=10, width=50, font=text_font)
-        self.wma_weights_entry.grid(column=1, row=4, columnspan=4, padx=10, pady=5, sticky="ew")
+        ttk.Label(parent, text="Weighted Moving Average: Enter weights:").grid(column=0, row=4, sticky=tk.W, padx=10, pady=5)
+        self.wma_weights_entry = tk.Text(parent, height=10, width=50)
+        self.wma_weights_entry.grid(column=1, row=4, columnspan=4, padx=10, pady=5)
         self.wma_weights_entry.insert(tk.END, "w0 0.3\nw1 0.25\nw2 0.1\nw3 0.1\nw4 0.08\nw5 0.07\nw6 0.05\nw7 0.05")  # Sample weights
-        self.wma_result = ttk.Label(parent, text="Result will appear here", font=("Helvetica", int(15 * self.scale)))
-        self.wma_result.grid(column=2, row=5, padx=10, pady=5, sticky="ew")
-        ttk.Button(parent, text="Calculate WMA", command=self.calculate_wma, padding=(10, 5)).grid(column=3, row=5, padx=10, pady=5, sticky="ew")
-        ttk.Button(parent, text="Export WMA to Excel", command=self.export_wma_to_excel, padding=(10, 5)).grid(column=4, row=5, padx=10, pady=5, sticky="ew")
+        self.wma_result = ttk.Label(parent, text="Result will appear here")
+        self.wma_result.grid(column=2, row=5, padx=10, pady=5)
+        ttk.Button(parent, text="Calculate WMA", command=self.calculate_wma).grid(column=3, row=5, padx=10, pady=5)
+        ttk.Button(parent, text="Export WMA to Excel", command=self.export_wma_to_excel).grid(column=4, row=5, padx=10, pady=5)
 
         # Exponential Smoothing
-        ttk.Label(parent, text="Exponential Smoothing: Enter smoothing factor (alpha):", font=("Helvetica", int(15 * self.scale))).grid(column=0, row=6, sticky=tk.W, padx=10, pady=5)
-        self.es_alpha_entry = tk.Entry(parent, width=10, font=text_font)
-        self.es_alpha_entry.grid(column=1, row=6, padx=10, pady=5, sticky="ew")
-        ttk.Label(parent, text="Enter prior forecast value:", font=("Helvetica", int(15 * self.scale))).grid(column=0, row=7, sticky=tk.W, padx=10, pady=5)
-        self.es_prior_entry = tk.Entry(parent, width=10, font=text_font)
-        self.es_prior_entry.grid(column=1, row=7, padx=10, pady=5, sticky="ew")
-        ttk.Label(parent, text="Enter observed demand for last period:", font=("Helvetica", int(15 * self.scale))).grid(column=0, row=8, sticky=tk.W, padx=10, pady=5)
-        self.es_observed_entry = tk.Entry(parent, width=10, font=text_font)
-        self.es_observed_entry.grid(column=1, row=8, padx=10, pady=5, sticky="ew")
-        self.es_result = ttk.Label(parent, text="Result will appear here", font=("Helvetica", int(15 * self.scale)))
-        self.es_result.grid(column=2, row=8, padx=10, pady=5, sticky="ew")
-        ttk.Button(parent, text="Calculate ES", command=self.calculate_es, padding=(10, 5)).grid(column=3, row=8, padx=10, pady=5, sticky="ew")
-        ttk.Button(parent, text="Export ES to Excel", command=self.export_es_to_excel, padding=(10, 5)).grid(column=4, row=8, padx=10, pady=5, sticky="ew")
+        ttk.Label(parent, text="Exponential Smoothing: Enter smoothing factor (alpha):").grid(column=0, row=6, sticky=tk.W, padx=10, pady=5)
+        self.es_alpha_entry = tk.Entry(parent, width=10)
+        self.es_alpha_entry.grid(column=1, row=6, padx=10, pady=5)
+        ttk.Label(parent, text="Enter prior forecast value:").grid(column=0, row=7, sticky=tk.W, padx=10, pady=5)
+        self.es_prior_entry = tk.Entry(parent, width=10)
+        self.es_prior_entry.grid(column=1, row=7, padx=10, pady=5)
+        ttk.Label(parent, text="Enter observed demand for last period:").grid(column=0, row=8, sticky=tk.W, padx=10, pady=5)
+        self.es_observed_entry = tk.Entry(parent, width=10)
+        self.es_observed_entry.grid(column=1, row=8, padx=10, pady=5)
+        self.es_result = ttk.Label(parent, text="Result will appear here")
+        self.es_result.grid(column=2, row=8, padx=10, pady=5)
+        ttk.Button(parent, text="Calculate ES", command=self.calculate_es).grid(column=3, row=8, padx=10, pady=5)
+        ttk.Button(parent, text="Export ES to Excel", command=self.export_es_to_excel).grid(column=4, row=8, padx=10, pady=5)
 
         # Export All
-        ttk.Button(parent, text="Export All to Excel", command=self.export_all_to_excel).grid(column=0, row=9, columnspan=5, padx=10, pady=20, sticky="ew")
+        ttk.Button(parent, text="Export All to Excel", command=self.export_all_to_excel).grid(column=0, row=9, columnspan=5, padx=10, pady=20)
 
     def configure_grid_weights(self, parent):
         for i in range(10):
