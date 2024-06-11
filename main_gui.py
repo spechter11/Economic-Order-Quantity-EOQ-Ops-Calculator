@@ -15,7 +15,7 @@ class MainApp:
 
         # Create EOQ tab
         self.eoq_frame = ttk.Frame(self.notebook)
-        EOQApp(self.eoq_frame, self.root)
+        EOQApp(self.eoq_frame)
         self.notebook.add(self.eoq_frame, text='EOQ Calculator')
 
         # Create Time Series Forecast tab

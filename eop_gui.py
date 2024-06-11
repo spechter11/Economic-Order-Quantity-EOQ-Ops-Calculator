@@ -2,11 +2,10 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from eop_processor import EOQProcessor
 import os
-import numpy as np
+
 valid_vals = ["", "None"]
 class EOQApp:
-    def __init__(self, parent, root):
-        self.root = root
+    def __init__(self, parent):
         self.parent = parent
         self.create_eoq_widgets(parent)
         self.configure_grid_weights(parent)
@@ -18,14 +17,6 @@ class EOQApp:
     def validate_val(self, new_value):
         if new_value in valid_vals or new_value.isdigit():
             return True
-        else:
-            return self.error_ret(new_value)
-
-    def validate_percentage(self, new_value):
-        if new_value in valid_vals or self.is_valid_decimal(new_value):
-            if new_value not in valid_vals and float(new_value) <= 100.00:
-                return True
-            return False
         else:
             return self.error_ret(new_value)
 
@@ -45,31 +36,32 @@ class EOQApp:
     def create_eoq_widgets(self, parent):
         # Adding a title
         title_label = ttk.Label(parent, text="EOQ Calculator", font=("Helvetica", 16, "bold"))
-        title_label.grid(row=0, column=0, columnspan=2, pady=10)
+        title_label.grid(row=0, column=0, columnspan=3, pady=10)
 
         # Adding instructions
         instructions_label = ttk.Label(parent, text="Please enter the following parameters. You can leave any field as 'None'.")
-        instructions_label.grid(row=1, column=0, columnspan=2, pady=5)
+        instructions_label.grid(row=1, column=0, columnspan=3, pady=5)
 
         # Frame for input fields
         input_frame = ttk.Frame(parent)
-        input_frame.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
+        input_frame.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
 
         # Labels and dropdown menus for inputs
         self.entries = {}
         parameters = [
-            ("Demand Rate (units/day)", "demand_rate", self.root.register(self.validate_val)),
-            ("Demand Yearly (units/year)", "demand_yearly", self.root.register(self.validate_val)),
-            ("Purchase Cost (dollars/unit)", "purchase_cost", self.root.register(self.validate_decimal)),
-            ("Holding Cost Rate (annual %)", "holding_cost_rate", self.root.register(self.validate_percentage)),
-            ("Holding Cost per Unit (dollars/unit/year)", "holding_cost_per_unit", self.root.register(self.validate_decimal)),
-            ("Ordering Cost (dollars/order)", "ordering_cost", self.root.register(self.validate_decimal)),
-            ("Standard Deviation (units/day)", "standard_deviation_per_day", self.root.register(self.validate_decimal)),
-            ("Lead Time (days)", "lead_time_days", self.root.register(self.validate_val)),
-            ("Service Level (decimal)", "service_level", self.root.register(self.validate_decimal)),
-            ("Weeks per Year", "weeks_per_year", self.root.register(self.validate_val)),
-            ("Days per Year", "days_per_year", self.root.register(self.validate_val)),
-            ("EOQ", "EOQ", self.root.register(self.validate_decimal)),
+            ("Demand Rate (units/day)", "demand_rate", self.parent.register(self.validate_val)),
+            ("Demand Yearly (units/year)", "demand_yearly", self.parent.register(self.validate_val)),
+            ("Purchase Cost (dollars/unit)", "purchase_cost", self.parent.register(self.validate_decimal)),
+            ("Holding Cost Rate (annual %)", "holding_cost_rate", self.parent.register(self.validate_decimal)),
+            ("Holding Cost per Unit (dollars/unit/year)", "holding_cost_per_unit", self.parent.register(self.validate_decimal)),
+            ("Ordering Cost (dollars/order)", "ordering_cost", self.parent.register(self.validate_decimal)),
+            ("Standard Deviation (units/day)", "standard_deviation_per_day", self.parent.register(self.validate_decimal)),
+            ("Lead Time (weeks)", "lead_time", self.parent.register(self.validate_val)),
+            ("Lead Time (days)", "lead_time_days", self.parent.register(self.validate_val)),
+            ("Service Level (decimal)", "service_level", self.parent.register(self.validate_decimal)),
+            ("Weeks per Year", "weeks_per_year", self.parent.register(self.validate_val)),
+            ("Days per Year", "days_per_year", self.parent.register(self.validate_val)),
+            ("EOQ", "EOQ", self.parent.register(self.validate_decimal)),
             ("Toggle Holding Stock (yes/no)", "toggle_holding_stock", None)
         ]
 
@@ -89,7 +81,7 @@ class EOQApp:
 
         # Frame for buttons
         button_frame = ttk.Frame(parent)
-        button_frame.grid(row=3, column=0, columnspan=2, pady=10, sticky="ew")
+        button_frame.grid(row=3, column=0, columnspan=1, pady=10, sticky="w")
 
         # Calculate EOQ button
         self.calculate_eoq_button = ttk.Button(button_frame, text="Calculate EOQ Only", command=self.calculate_eoq_only)
@@ -104,18 +96,17 @@ class EOQApp:
         self.plot_button.grid(row=0, column=2, padx=10)
 
         # Text area for displaying results
-        self.results_text = tk.Text(parent, height=15, width=80, wrap=tk.WORD)
-        self.results_text.grid(row=4, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
-        
+        self.results_text = tk.Text(parent, height=30, width=80, wrap=tk.WORD)
+        self.results_text.grid(row=2, column=1, rowspan=2, padx=10, pady=10, sticky="nsew")
+
         # Path for saved Excel file
         self.excel_path = os.path.join(os.path.expanduser("~"), "Downloads", "eoq_results.xlsx")
 
     def configure_grid_weights(self, parent):
         parent.grid_rowconfigure(0, weight=1)
         parent.grid_rowconfigure(1, weight=1)
-        parent.grid_rowconfigure(2, weight=3)
+        parent.grid_rowconfigure(2, weight=1)
         parent.grid_rowconfigure(3, weight=1)
-        parent.grid_rowconfigure(4, weight=5)
         parent.grid_columnconfigure(0, weight=1)
         parent.grid_columnconfigure(1, weight=1)
 
@@ -159,7 +150,8 @@ class EOQApp:
                 holding_cost_per_unit=inputs.get('holding_cost_per_unit'),
                 ordering_cost=inputs.get('ordering_cost'),
                 standard_deviation=inputs.get('standard_deviation_per_day'),
-                lead_time=inputs.get('lead_time_days'),
+                lead_time=inputs.get('lead_time'),
+                lead_time_days=inputs.get('lead_time_days'),
                 service_level=inputs.get('service_level'),
                 weeks_per_year=inputs.get('weeks_per_year'),
                 days_per_year=inputs.get('days_per_year'),

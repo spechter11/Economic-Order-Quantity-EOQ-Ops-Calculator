@@ -44,10 +44,10 @@ class EOQCalculator:
             self.z = self.calculate_z_score(self.service_level)
         if self.standard_deviation_per_day is not None:
             self.standard_deviation = self.standard_deviation_per_day * math.sqrt(self.days_per_year)
-        if self.lead_time_days is not None and self.days_per_year is not None and self.weeks_per_year is not None:
-            self.lead_time = self.lead_time_days / (self.days_per_year / self.weeks_per_year)
-        elif self.lead_time is not None and self.days_per_year is not None and self.weeks_per_year is not None:
-            self.lead_time_days = self.lead_time * (self.days_per_year / self.weeks_per_year)
+        # if self.lead_time_days is not None and self.days_per_year is not None and self.weeks_per_year is not None:
+        #     self.lead_time = self.lead_time_days / (self.days_per_year / self.weeks_per_year)
+        # elif self.lead_time is not None and self.days_per_year is not None and self.weeks_per_year is not None:
+        #     self.lead_time_days = self.lead_time * (self.days_per_year / self.weeks_per_year)
 
     def solve_missing_parameters(self):
         if self.D is None and self.ordering_cost is not None and self.H is not None:
@@ -114,9 +114,9 @@ class EOQCalculator:
         if self.standard_deviation is None or self.z is None:
             raise ValueError("Insufficient parameters to calculate safety stock")
         if self.lead_time is not None:
-            sigma_dLT = self.standard_deviation * math.sqrt(self.lead_time)
+            sigma_dLT = self.standard_deviation * math.sqrt((self.lead_time*self.days_per_year/self.weeks_per_year))
         elif self.lead_time_days is not None:
-            sigma_dLT = self.standard_deviation * math.sqrt(self.lead_time_days / (self.days_per_year / self.weeks_per_year))
+            sigma_dLT = self.standard_deviation * math.sqrt(self.lead_time_days)
         else:
             raise ValueError("Insufficient parameters to calculate safety stock")
         safety_stock = self.z * sigma_dLT

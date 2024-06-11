@@ -19,10 +19,10 @@ class ForecastErrorApp:
             "\nFeb-2023 1200 1150"
             "\nMar-2023 1300 1250"
         )
-        ttk.Label(parent, text=instructions, justify=tk.LEFT, font=("Helvetica", 12, "bold")).grid(column=0, row=0, columnspan=4, sticky=tk.W, padx=10, pady=10)
+        ttk.Label(parent, text=instructions, justify=tk.LEFT, font=("Helvetica", 10, "bold")).grid(column=0, row=0, columnspan=4, sticky=tk.W, padx=10, pady=10)
 
         # Input fields for data
-        self.error_data_entry = tk.Text(parent, height=10, width=80, font=("Helvetica", 12))
+        self.error_data_entry = tk.Text(parent, height=10, width=80, font=("Helvetica", 10))
         self.error_data_entry.grid(column=0, row=1, columnspan=4, padx=10, pady=5)
         self.error_data_entry.insert(tk.END, "Jan-2023 1000 1100\nFeb-2023 1200 1150\nMar-2023 1300 1250")  # Sample data
 
@@ -30,7 +30,7 @@ class ForecastErrorApp:
         ttk.Button(parent, text="Calculate Forecast Errors", command=self.calculate_errors).grid(column=0, row=2, columnspan=4, padx=10, pady=10)
 
         # Result display
-        self.error_result = tk.Text(parent, height=10, width=80, font=("Helvetica", 12), state='disabled')
+        self.error_result = tk.Text(parent, height=10, width=80, font=("Helvetica", 10), state='disabled')
         self.error_result.grid(column=0, row=3, columnspan=4, padx=10, pady=5)
 
         # Export button
