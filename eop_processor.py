@@ -6,9 +6,10 @@ from eop_calculations import EOQCalculator
 import pandas as pd
 
 class EOQProcessor:
-    def __init__(self, demand_rate=None, demand_yearly=None, purchase_cost=None, holding_cost_rate=None, holding_cost_per_unit=None, ordering_cost=None, standard_deviation=None, standard_deviation_per_day=None, lead_time=None, lead_time_days=None, service_level=None, weeks_per_year=52, days_per_year=365, EOQ=None, toggle_holding_stock=True):
+    def __init__(self, demand_rate=None, demand_weekly=None, demand_yearly=None, purchase_cost=None, holding_cost_rate=None, holding_cost_per_unit=None, ordering_cost=None, standard_deviation=None, standard_deviation_per_day=None, lead_time=None, lead_time_days=None, service_level=None, weeks_per_year=52, days_per_year=365, EOQ=None, toggle_holding_stock=True):
         self.calculator = EOQCalculator(
             demand_rate=demand_rate,
+            demand_weekly=demand_weekly,
             demand_yearly=demand_yearly,
             purchase_cost=purchase_cost,
             holding_cost_rate=holding_cost_rate,
@@ -36,10 +37,10 @@ class EOQProcessor:
 
     def generate_input_table(self):
         inputs = {
-            "Parameter": ["Demand Rate (units/day)", "Demand Yearly (units/year)", "Purchase Cost (dollars/unit)",
+            "Parameter": ["Demand Rate (units/day)", "Demand Weekly (units/week)" ,"Demand Yearly (units/year)", "Purchase Cost (dollars/unit)",
                           "Holding Cost Rate (annual %)", "Holding Cost per Unit (dollars/unit/year)", "Ordering Cost (dollars/order)", "Standard Deviation (units/week)",
                           "Standard Deviation (units/day)", "Lead Time (weeks)", "Lead Time (days)", "Service Level (%)", "Weeks per Year", "Days per Year", "EOQ", "Toggle Holding Stock", "Z Score"],
-            "Value": [self.calculator.demand_rate, self.calculator.demand_yearly, self.calculator.purchase_cost,
+            "Value": [self.calculator.demand_rate, self.calculator.demand_weekly, self.calculator.demand_yearly, self.calculator.purchase_cost,
                       self.calculator.holding_cost_rate, self.calculator.holding_cost_per_unit, self.calculator.ordering_cost,
                       self.calculator.standard_deviation_per_day, self.calculator.standard_deviation, self.calculator.lead_time, self.calculator.lead_time_days, self.calculator.service_level * 100 if self.calculator.service_level else None,
                       self.calculator.weeks_per_year, self.calculator.days_per_year, self.calculator.EOQ, self.calculator.toggle_holding_stock, self.calculator.z]

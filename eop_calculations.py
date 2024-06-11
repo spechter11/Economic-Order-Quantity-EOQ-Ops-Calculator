@@ -4,8 +4,9 @@ import matplotlib.pyplot as plt
 from scipy.stats import norm
 
 class EOQCalculator:
-    def __init__(self, demand_rate=None, demand_yearly=None, purchase_cost=None, holding_cost_rate=None, holding_cost_per_unit=None, ordering_cost=None, standard_deviation=None, standard_deviation_per_day=None, lead_time=None, lead_time_days=None, service_level=None, weeks_per_year=None, days_per_year=365, EOQ=None, toggle_holding_stock=True):
+    def __init__(self, demand_rate=None, demand_weekly=None, demand_yearly=None, purchase_cost=None, holding_cost_rate=None, holding_cost_per_unit=None, ordering_cost=None, standard_deviation=None, standard_deviation_per_day=None, lead_time=None, lead_time_days=None, service_level=None, weeks_per_year=None, days_per_year=365, EOQ=None, toggle_holding_stock=True):
         self.demand_rate = demand_rate  # units per day
+        self.demand_weekly = demand_weekly # units per week
         self.demand_yearly = demand_yearly  # units per year
         self.purchase_cost = purchase_cost  # cost per unit
         self.holding_cost_rate = holding_cost_rate  # holding cost rate per year
@@ -27,8 +28,13 @@ class EOQCalculator:
         self.update_calculations()
 
     def update_calculations(self):
+        if self.days_per_year is None:
+            self.days_per_year = self.weeks_per_year * 7
         if self.demand_rate is not None:
             self.D = self.demand_rate * self.days_per_year  # annual demand in units/year
+        elif self.demand_weekly is not None:
+            self.D = self.demand_weekly * self.weeks_per_year # convert to yearly demand
+            self.demand_rate = self.D / self.days_per_year
         elif self.demand_yearly is not None:
             self.D = self.demand_yearly
             self.demand_rate = self.D / self.days_per_year  # calculate daily demand from annual demand
@@ -64,9 +70,11 @@ class EOQCalculator:
         if self.demand_rate is None and self.D is not None and self.days_per_year is not None:
             self.demand_rate = self.D / self.days_per_year
 
-    def set_parameters(self, demand_rate=None, demand_yearly=None, purchase_cost=None, holding_cost_rate=None, holding_cost_per_unit=None, ordering_cost=None, standard_deviation=None, standard_deviation_per_day=None, lead_time=None, lead_time_days=None, service_level=None, weeks_per_year=None, days_per_year=None, EOQ=None, toggle_holding_stock=None):
+    def set_parameters(self, demand_rate=None, demand_weekly=None, demand_yearly=None, purchase_cost=None, holding_cost_rate=None, holding_cost_per_unit=None, ordering_cost=None, standard_deviation=None, standard_deviation_per_day=None, lead_time=None, lead_time_days=None, service_level=None, weeks_per_year=None, days_per_year=None, EOQ=None, toggle_holding_stock=None):
         if demand_rate is not None:
             self.demand_rate = demand_rate
+        if demand_weekly is not None:
+            self.demand_weekly = demand_weekly
         if demand_yearly is not None:
             self.demand_yearly = demand_yearly
         if purchase_cost is not None:
@@ -103,6 +111,7 @@ class EOQCalculator:
             raise ValueError("Insufficient parameters to calculate EOQ")
         if self.D == 0 or self.H == 0 or self.ordering_cost == 0:
             raise ValueError("D, H, and ordering cost must be non-zero for EOQ calculation")
+        print("My Params", self.D, self.ordering_cost, self.H)
         return math.sqrt((2 * self.D * self.ordering_cost) / self.H)
 
     def calculate_z_score(self, service_level):
@@ -219,6 +228,7 @@ class EOQCalculator:
 
         print("EOQ Calculation Results:")
         print(f"Demand rate (units/day): {self.demand_rate if self.demand_rate is not None else 'None'}")
+        print(f"Demand (units/week): {self.D if self.D is not None else 'None'}")
         print(f"Demand (units/year): {self.D if self.D is not None else 'None'}")
         print(f"Purchase cost (dollars/unit): {self.purchase_cost if self.purchase_cost is not None else 'None'}")
         print(f"Holding cost rate (annual %): {self.holding_cost_rate if self.holding_cost_rate is not None else 'None'}")

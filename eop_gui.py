@@ -50,6 +50,7 @@ class EOQApp:
         self.entries = {}
         parameters = [
             ("Demand Rate (units/day)", "demand_rate", self.parent.register(self.validate_val)),
+            ("Demand Rate (units/week)", "demand_weekly", self.parent.register(self.validate_val)),
             ("Demand Yearly (units/year)", "demand_yearly", self.parent.register(self.validate_val)),
             ("Purchase Cost (dollars/unit)", "purchase_cost", self.parent.register(self.validate_decimal)),
             ("Holding Cost Rate (annual %)", "holding_cost_rate", self.parent.register(self.validate_decimal)),
@@ -144,6 +145,7 @@ class EOQApp:
         try:
             processor = EOQProcessor(
                 demand_rate=inputs.get('demand_rate'),
+                demand_weekly=inputs.get('demand_weekly'),
                 demand_yearly=inputs.get('demand_yearly'),
                 purchase_cost=inputs.get('purchase_cost'),
                 holding_cost_rate=inputs.get('holding_cost_rate'),
